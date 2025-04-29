@@ -65,6 +65,26 @@ export function EtfAllocationAdvisor() {
     dollars: Math.round(investmentAmount * (item.value / 100)),
   }))
 
+  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, name }: any) => {
+    const RADIAN = Math.PI / 180
+    const radius = innerRadius + (outerRadius - innerRadius) * 2.2
+    const x = cx + radius * Math.cos(-midAngle * RADIAN)
+    const y = cy + radius * Math.sin(-midAngle * RADIAN)
+
+    return (
+      <text
+        x={x}
+        y={y}
+        fill="hsl(var(--foreground))"
+        textAnchor={x > cx ? 'start' : 'end'}
+        dominantBaseline="central"
+        className="text-xs font-medium"
+      >
+        {`${name} ${(percent * 100).toFixed(0)}%`}
+      </text>
+    )
+  }
+
   if (!mounted) {
     return null // Return nothing on the server side
   }
@@ -160,7 +180,7 @@ export function EtfAllocationAdvisor() {
 
           {/* Right Column - Chart and Allocations */}
           <div className="space-y-6">
-            <div className="h-[200px]">
+            <div className="h-[300px]">
               <ChartContainer
                 config={Object.fromEntries(
                   currentAllocation.map((item) => [item.name, { label: item.name, color: item.color }])
@@ -172,12 +192,12 @@ export function EtfAllocationAdvisor() {
                       data={currentAllocation}
                       cx="50%"
                       cy="50%"
-                      innerRadius={45}
-                      outerRadius={80}
+                      innerRadius={50}
+                      outerRadius={70}
                       paddingAngle={2}
                       dataKey="value"
-                      label={({ name, value }) => `${name} ${value}%`}
-                      labelLine={true}
+                      label={renderCustomizedLabel}
+                      labelLine={false}
                       onClick={(data) => setSelectedCategory(data.name)}
                     >
                       {currentAllocation.map((entry, index) => (
