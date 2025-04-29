@@ -1,8 +1,8 @@
 "use client"
 
-import { useState } from "react"
-import { Cell, Pie, PieChart, ResponsiveContainer, Label } from "recharts"
-import { TrendingUp, HelpCircle } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts"
+import { HelpCircle, TrendingUp } from "lucide-react"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label as UILabel } from "@/components/ui/label"
@@ -46,10 +46,16 @@ const recommendedEtfs = {
 }
 
 export function EtfAllocationAdvisor() {
+  const [mounted, setMounted] = useState(false)
   const [riskProfile, setRiskProfile] = useState("moderate")
   const [investmentAmount, setInvestmentAmount] = useState(10000)
   const [timeHorizon, setTimeHorizon] = useState(15)
   const [selectedCategory, setSelectedCategory] = useState("")
+
+  // Prevent hydration mismatch by only rendering after mount
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const currentAllocation = allocations[riskProfile as keyof typeof allocations]
 
@@ -59,24 +65,8 @@ export function EtfAllocationAdvisor() {
     dollars: Math.round(investmentAmount * (item.value / 100)),
   }))
 
-  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, index, name }: any) => {
-    const RADIAN = Math.PI / 180
-    const radius = innerRadius + (outerRadius - innerRadius) * 1.4
-    const x = cx + radius * Math.cos(-midAngle * RADIAN)
-    const y = cy + radius * Math.sin(-midAngle * RADIAN)
-
-    return (
-      <text
-        x={x}
-        y={y}
-        fill="hsl(var(--foreground))"
-        textAnchor={x > cx ? 'start' : 'end'}
-        dominantBaseline="central"
-        className="text-xs font-medium"
-      >
-        {`${name} ${(percent * 100).toFixed(0)}%`}
-      </text>
-    )
+  if (!mounted) {
+    return null // Return nothing on the server side
   }
 
   return (
@@ -170,7 +160,7 @@ export function EtfAllocationAdvisor() {
 
           {/* Right Column - Chart and Allocations */}
           <div className="space-y-6">
-            <div className="h-[250px]">
+            <div className="h-[200px]">
               <ChartContainer
                 config={Object.fromEntries(
                   currentAllocation.map((item) => [item.name, { label: item.name, color: item.color }])
@@ -182,8 +172,8 @@ export function EtfAllocationAdvisor() {
                       data={currentAllocation}
                       cx="50%"
                       cy="50%"
-                      innerRadius={50}
-                      outerRadius={85}
+                      innerRadius={45}
+                      outerRadius={80}
                       paddingAngle={2}
                       dataKey="value"
                       label={({ name, value }) => `${name} ${value}%`}
@@ -223,6 +213,19 @@ export function EtfAllocationAdvisor() {
                 </Card>
               ))}
             </div>
+
+            {selectedCategory && (
+              <div className="p-4 border rounded-lg">
+                <h3 className="font-medium mb-2">Recommended {selectedCategory}</h3>
+                <div className="space-y-2">
+                  {recommendedEtfs[selectedCategory as keyof typeof recommendedEtfs].map((etf, index) => (
+                    <div key={index} className="p-2 bg-muted/30 rounded-lg">
+                      <div className="font-medium">{etf}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </CardContent>
