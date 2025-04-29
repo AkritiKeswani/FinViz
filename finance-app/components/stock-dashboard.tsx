@@ -6,7 +6,6 @@ import { ArrowDown, ArrowUp } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { getStockHistory, getCompanyInfo } from "@/lib/polygon"
 import { LiveStockPrice } from "@/components/live-stock-price"
 
 type TimeRange = "1D" | "1W" | "1M" | "3M" | "1Y"
@@ -27,23 +26,22 @@ export function StockDashboard() {
       setError(null)
 
       try {
-        const historyData = await getStockHistory(symbol)
-
-        // Check if historyData is valid
-        if (Array.isArray(historyData) && historyData.length > 0) {
-          // Process the data based on the selected time range
-          const processedData = processDataForTimeRange(historyData, timeRange)
+        const response = await fetch(`/api/stocks?symbol=${symbol}&timeRange=${timeRange}`)
+        if (!response.ok) {
+          throw new Error('Failed to fetch stock data')
+        }
+        const data = await response.json()
+        
+        if (data.results && data.results.length > 0) {
+          const processedData = processDataForTimeRange(data.results, timeRange)
           setStockData(processedData)
         } else {
           console.log("Using mock data due to empty API response")
-          // Fall back to mock data
           setStockData(getMockDataForTimeRange(timeRange))
         }
       } catch (err) {
         console.error("Error loading stock data:", err)
         setError("Failed to load stock data. Using mock data instead.")
-
-        // Fall back to mock data
         setStockData(getMockDataForTimeRange(timeRange))
       } finally {
         setIsLoading(false)

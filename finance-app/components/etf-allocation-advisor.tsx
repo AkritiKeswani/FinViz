@@ -1,12 +1,11 @@
 "use client"
 
 import { useState } from "react"
-import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts"
-import { ArrowRight, HelpCircle, TrendingUp } from "lucide-react"
+import { Cell, Pie, PieChart, ResponsiveContainer, Label } from "recharts"
+import { TrendingUp, HelpCircle } from "lucide-react"
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Label as UILabel } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Slider } from "@/components/ui/slider"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
@@ -60,6 +59,26 @@ export function EtfAllocationAdvisor() {
     dollars: Math.round(investmentAmount * (item.value / 100)),
   }))
 
+  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, index, name }: any) => {
+    const RADIAN = Math.PI / 180
+    const radius = innerRadius + (outerRadius - innerRadius) * 1.4
+    const x = cx + radius * Math.cos(-midAngle * RADIAN)
+    const y = cy + radius * Math.sin(-midAngle * RADIAN)
+
+    return (
+      <text
+        x={x}
+        y={y}
+        fill="hsl(var(--foreground))"
+        textAnchor={x > cx ? 'start' : 'end'}
+        dominantBaseline="central"
+        className="text-xs font-medium"
+      >
+        {`${name} ${(percent * 100).toFixed(0)}%`}
+      </text>
+    )
+  }
+
   return (
     <Card className="w-full">
       <CardHeader>
@@ -69,12 +88,13 @@ export function EtfAllocationAdvisor() {
         </CardTitle>
         <CardDescription>Optimize your ETF allocation based on your risk profile</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="grid gap-6 md:grid-cols-2">
-          <div className="space-y-4">
+      <CardContent>
+        <div className="grid gap-6 lg:grid-cols-2">
+          {/* Left Column - Controls */}
+          <div className="space-y-6">
             <div>
               <div className="flex items-center justify-between mb-2">
-                <Label>Risk Tolerance</Label>
+                <UILabel>Risk Tolerance</UILabel>
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -92,22 +112,22 @@ export function EtfAllocationAdvisor() {
               <RadioGroup value={riskProfile} onValueChange={setRiskProfile} className="flex space-x-2">
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="conservative" id="conservative" />
-                  <Label htmlFor="conservative">Conservative</Label>
+                  <UILabel htmlFor="conservative">Conservative</UILabel>
                 </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="moderate" id="moderate" />
-                  <Label htmlFor="moderate">Moderate</Label>
+                  <UILabel htmlFor="moderate">Moderate</UILabel>
                 </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="aggressive" id="aggressive" />
-                  <Label htmlFor="aggressive">Aggressive</Label>
+                  <UILabel htmlFor="aggressive">Aggressive</UILabel>
                 </div>
               </RadioGroup>
             </div>
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="investment-amount">Investment Amount</Label>
+                <UILabel htmlFor="investment-amount">Investment Amount</UILabel>
                 <span className="text-sm font-medium">${investmentAmount.toLocaleString()}</span>
               </div>
               <Slider
@@ -122,7 +142,7 @@ export function EtfAllocationAdvisor() {
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="time-horizon">Time Horizon (Years)</Label>
+                <UILabel htmlFor="time-horizon">Time Horizon (Years)</UILabel>
                 <span className="text-sm font-medium">{timeHorizon} years</span>
               </div>
               <Slider
@@ -135,8 +155,8 @@ export function EtfAllocationAdvisor() {
               />
             </div>
 
-            <div className="p-4 border rounded-lg bg-muted/30 space-y-2">
-              <h3 className="font-medium">Recommended Strategy</h3>
+            <div className="p-4 border rounded-lg bg-muted/30">
+              <h3 className="font-medium mb-2">Recommended Strategy</h3>
               <p className="text-sm text-muted-foreground">
                 {riskProfile === "conservative" &&
                   "This conservative allocation focuses on stability with a higher percentage in bonds, suitable for shorter time horizons or lower risk tolerance."}
@@ -148,17 +168,13 @@ export function EtfAllocationAdvisor() {
             </div>
           </div>
 
-          <div>
-            <div className="mb-2 font-medium">Recommended Allocation</div>
+          {/* Right Column - Chart and Allocations */}
+          <div className="space-y-6">
             <div className="h-[250px]">
               <ChartContainer
-                config={
-                  currentAllocation
-                    ? Object.fromEntries(
-                        currentAllocation.map((item) => [item.name, { label: item.name, color: item.color }]),
-                      )
-                    : {}
-                }
+                config={Object.fromEntries(
+                  currentAllocation.map((item) => [item.name, { label: item.name, color: item.color }])
+                )}
               >
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -166,12 +182,12 @@ export function EtfAllocationAdvisor() {
                       data={currentAllocation}
                       cx="50%"
                       cy="50%"
-                      innerRadius={60}
-                      outerRadius={90}
+                      innerRadius={50}
+                      outerRadius={85}
                       paddingAngle={2}
                       dataKey="value"
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                      labelLine={false}
+                      label={({ name, value }) => `${name} ${value}%`}
+                      labelLine={true}
                       onClick={(data) => setSelectedCategory(data.name)}
                     >
                       {currentAllocation.map((entry, index) => (
@@ -189,46 +205,27 @@ export function EtfAllocationAdvisor() {
               </ChartContainer>
             </div>
 
-            <div className="mt-4 grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-3">
               {dollarAllocations.map((item) => (
-                <div
+                <Card
                   key={item.name}
-                  className={`p-2 border rounded-lg cursor-pointer ${selectedCategory === item.name ? "border-primary bg-primary/5" : ""}`}
+                  className={`p-3 cursor-pointer hover:bg-muted/50 transition-colors ${
+                    selectedCategory === item.name ? "border-primary bg-primary/5" : ""
+                  }`}
                   onClick={() => setSelectedCategory(item.name)}
                 >
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 mb-1">
                     <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
-                    <div className="text-sm font-medium">{item.name}</div>
+                    <span className="font-medium text-sm">{item.name}</span>
                   </div>
-                  <div className="mt-1">
-                    <div className="text-lg font-bold">${item.dollars.toLocaleString()}</div>
-                    <div className="text-xs text-muted-foreground">{item.value}% of portfolio</div>
-                  </div>
-                </div>
+                  <div className="text-lg font-bold">${item.dollars.toLocaleString()}</div>
+                  <div className="text-xs text-muted-foreground">{item.value}% of portfolio</div>
+                </Card>
               ))}
             </div>
           </div>
         </div>
-
-        {selectedCategory && recommendedEtfs[selectedCategory as keyof typeof recommendedEtfs] ? (
-          <div className="p-4 border rounded-lg">
-            <h3 className="font-medium mb-2">Recommended {selectedCategory}</h3>
-            <div className="space-y-2">
-              {recommendedEtfs[selectedCategory as keyof typeof recommendedEtfs].map((etf, index) => (
-                <div key={index} className="flex items-center justify-between p-2 bg-muted/30 rounded-lg">
-                  <div className="font-medium">{etf}</div>
-                  <Button variant="ghost" size="sm">
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : null}
       </CardContent>
-      <CardFooter>
-        <Button className="w-full">Get Personalized Recommendations</Button>
-      </CardFooter>
     </Card>
   )
 }
